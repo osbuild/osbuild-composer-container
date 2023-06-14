@@ -1,0 +1,26 @@
+include: {template: 'Workflows/MergeRequest-Pipelines.gitlab-ci.yml'}
+
+osbuild-composer:
+  image: quay.io/buildah/stable:latest
+  script:
+    - buildah bud -f osbuild-composer.Dockerfile -t quay.io/cki/osbuild-composer:example .
+    - buildah push --creds "${QUAY_IO_USER}:${QUAY_IO_PASSWORD}" quay.io/cki/osbuild-composer:example
+
+ami-build:
+  image: quay.io/cki/osbuild-composer:example
+  services:
+    - name: quay.io/cki/osbuild-composer:example
+      alias: osbuild-composer
+  tags:
+    - public-image-build-runner-x86_64
+  before_script:
+    - tail --follow --lines +1 "/builds/osbuild-composer-journal.txt" &
+    - mkdir -p /run/weldr
+    - socat unix-listen:/run/weldr/api.socket,fork
+      tcp-connect:osbuild-composer:8080 & sleep 1
+  script:
+    - composer-cli blueprints push moby.toml
+    - compose_id=$(composer-cli --json compose start moby ami
+      "moby-${CI_PIPELINE_ID}" config.toml | jq -r ".[].body.build_id")
+    - while [[ $(composer-cli --json compose info "${compose_id}"
+      | jq -r ".[].body.queue_status") =~ RUNNING|WAITING ]]; do sleep 15; done

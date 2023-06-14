@@ -1,0 +1,6 @@
+[Service]
+ExecStart=journalctl --all --follow --no-tail
+StandardOutput=file:/builds/osbuild-composer-journal.txt
+
+[Install]
+WantedBy=multi-user.target
