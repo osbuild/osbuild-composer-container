@@ -1,0 +1,5 @@
+[Service]
+ExecStart=bash -c 'for i in $(seq 0 9); do [ -e /dev/loop$i ] || mknod -m 0660 /dev/loop$i b 7 $i; done'
+
+[Install]
+WantedBy=multi-user.target

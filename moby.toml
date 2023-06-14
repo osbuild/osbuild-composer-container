@@ -1,0 +1,2 @@
+name = "moby"
+packages = [{ name = "docker" }]

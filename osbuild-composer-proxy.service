@@ -1,0 +1,10 @@
+[Unit]
+Requires=osbuild-composer.service
+After=osbuild-composer.service
+Requires=osbuild-composer-proxy.socket
+After=osbuild-composer-proxy.socket
+
+[Service]
+ExecStart=/usr/lib/systemd/systemd-socket-proxyd /run/weldr/api.socket
+PrivateTmp=yes
+PrivateNetwork=yes
