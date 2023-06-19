@@ -1,5 +1,5 @@
 [Socket]
-ListenStream=8080
+ListenStream=/builds/weldr-api.socket
 
 [Install]
 WantedBy=sockets.target

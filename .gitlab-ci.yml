@@ -3,21 +3,20 @@ include: {template: 'Workflows/MergeRequest-Pipelines.gitlab-ci.yml'}
 osbuild-composer:
   image: quay.io/buildah/stable:latest
   script:
-    - buildah bud -f osbuild-composer.Dockerfile -t quay.io/cki/osbuild-composer:example .
-    - buildah push --creds "${QUAY_IO_USER}:${QUAY_IO_PASSWORD}" quay.io/cki/osbuild-composer:example
+    - buildah bud -f osbuild-composer.Dockerfile -t "${CI_REGISTRY_IMAGE}:latest"
+    - buildah push --creds "${CI_REGISTRY_USER}:${CI_REGISTRY_PASSWORD}" "${CI_REGISTRY_IMAGE}:latest"
 
 ami-build:
-  image: quay.io/cki/osbuild-composer:example
+  image: $CI_REGISTRY_IMAGE:latest
   services:
-    - name: quay.io/cki/osbuild-composer:example
+    - name: $CI_REGISTRY_IMAGE:latest
       alias: osbuild-composer
-  tags:
-    - public-image-build-runner-x86_64
   before_script:
     - tail --follow --lines +1 "/builds/osbuild-composer-journal.txt" &
-    - mkdir -p /run/weldr
-    - socat unix-listen:/run/weldr/api.socket,fork
-      tcp-connect:osbuild-composer:8080 & sleep 1
+    - composer-cli() { /usr/bin/composer-cli --socket /builds/weldr-api.socket "$@"; }
+    - echo "accessKeyID = \"${AWS_ACCESS_KEY_ID}\"" >> config.toml
+    - echo "secretAccessKey = \"${AWS_SECRET_ACCESS_KEY}\"" >> config.toml
+    - echo "region = \"${AWS_DEFAULT_REGION}\"" >> config.toml
   script:
     - composer-cli blueprints push moby.toml
     - compose_id=$(composer-cli --json compose start moby ami
