@@ -1,0 +1,75 @@
+name: Build containers
+
+on:
+  pull_request:
+    branches: [main]
+    paths-ignore:
+      - "README.md"
+  workflow_dispatch:
+  schedule:
+    - cron: '35 4 * * *'
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        distribution:
+          - base: quay.io/centos/centos:stream8
+            tag: centos-stream-8
+          - base: quay.io/centos/centos:stream9
+            tag: centos-stream-9
+          - base: registry.fedoraproject.org/fedora:37
+            tag: fedora-37
+          - base: registry.fedoraproject.org/fedora:38
+            tag: fedora-38
+          - base: registry.fedoraproject.org/fedora:rawhide
+            tag: fedora-rawhide
+        copr:
+          - true
+          - false
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Determine tag
+        id: tag
+        run: |
+          BASE_TAG="${{ matrix.distribution.tag }}$(if ${{ matrix.copr }}; then echo -n '-copr'; fi)"
+          TAG="TAG=${BASE_TAG} ${BASE_TAG}-$(date --iso-8601=date)"
+          echo "$TAG" | tee -a "$GITHUB_OUTPUT"
+
+      - name: Build image
+        uses: redhat-actions/buildah-build@v2
+        with:
+          image: ${{ env.IMAGE_NAME }}
+          tags: ${{ steps.tag.outputs.TAG }}
+          containerfiles: Containerfile
+          build-args: |
+            COPR=${{ matrix.copr }}
+            FROM=${{ matrix.distribution.base }}
+
+      - name: Log in to the Container registry
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        uses: redhat-actions/podman-login@v1
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push to GitHub Container Repository
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        uses: redhat-actions/push-to-registry@v2
+        with:
+          image: ${{ env.IMAGE_NAME }}
+          tags: ${{ steps.tag.outputs.TAG }}
+          registry: ${{ env.REGISTRY }}
