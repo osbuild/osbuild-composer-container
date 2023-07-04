@@ -16,7 +16,7 @@ The full tag for the images follows the following format:
 $DISTRIBUTION-$VERSION(-copr)?
 ```
 
-Here, `$DISTRIBUTION` can be either `fedora` or `centos-stream`. The valid `$VERSION` values for Fedora are currently `37`, `38` and `39`. For CentOS Stream, it's possible to use either `8` or `9`. The optional `-copr` suffix indicates that these images include the latest upstream versions of `osbuild` and `osbuild-composer` from COPR.
+Here, `$DISTRIBUTION` can be either `fedora` or `centos-stream`. The valid `$VERSION` values for Fedora are currently `37` and `38`. For CentOS Stream, it's possible to use either `8` or `9`. The optional `-copr` suffix indicates that these images include the latest upstream versions of `osbuild` and `osbuild-composer` from COPR.
 
 If a rolling tag isn't suitable for your use case, this project also provides non-moving tags with the date of the container build encoded in ISO 8601 format.
 

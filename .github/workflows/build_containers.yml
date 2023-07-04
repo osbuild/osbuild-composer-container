@@ -32,8 +32,6 @@ jobs:
             tag: fedora-37
           - base: registry.fedoraproject.org/fedora:38
             tag: fedora-38
-          - base: registry.fedoraproject.org/fedora:rawhide
-            tag: fedora-rawhide
         copr:
           - true
           - false
